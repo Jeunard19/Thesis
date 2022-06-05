@@ -1,0 +1,653 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Dev Example — Networked-Aframe</title>
+    <meta name="description" content="Dev Example — Networked-Aframe">
+   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+      <!--<script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.slim.js"></script>
+   <!-- <script src="https://unpkg.com/aframe-environment-component@1.3.0/dist/aframe-environment-component.min.js"></script> -->
+    <script src="/easyrtc/easyrtc.js"></script>
+    <script src="/dist/networked-aframe.js"></script>
+ <!--<script src="https://unpkg.com/aframe-material-collection/dist/aframe-yoga-layout.min.js"></script> -->
+<!-- Include aframe-material-collection after aframe and yoga layout-->
+ <!--<script src="https://unpkg.com/aframe-material-collection/dist/aframe-material-collection.min.js"></script> -->
+
+    <script src="https://unpkg.com/aframe-randomizer-components@^3.0.1/dist/aframe-randomizer-components.min.js"></script>
+    <script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script>
+    
+   <!--  <script src="https://unpkg.com/aframe-particle-system-component@1.0.5/dist/aframe-particle-system-component.min.js"></script>-->
+     <script src="https://cdn.jsdelivr.net/gh/IdeaSpaceVR/aframe-particle-system-component@master/dist/aframe-particle-system-component.min.js"></script>
+    <!--<script src="https://cdn.jsdelivr.net/gh/IdeaSpaceVR/aframe-particle-system-component@master/dist/aframe-particle-system-component.min.js"></script>-->
+    <script src="/js/spawn-in-circle.component.js"></script>
+    <script src="/js/positioner.component.js"></script>
+    <script src="/js/logger.component.js"></script>
+    <script src="/js/highlight.js"></script>
+    <script src="/js/menu_visible.js"></script> 
+    <script src="/js/game.js"></script> 
+     <script>
+      // see issue https://github.com/networked-aframe/networked-aframe/issues/267
+      NAF.schemas.getComponentsOriginal = NAF.schemas.getComponents;
+      NAF.schemas.getComponents = (template) => {
+        if (!NAF.schemas.hasTemplate("#avatar-template")) {
+          NAF.schemas.add({
+            template: '#avatar-template',
+             components: [
+              'position',
+              'rotation',
+    
+    
+              'showall',
+              'logger',
+              'positioner',
+
+
+ 
+  
+         
+  
+              {
+                selector: '.head',
+                component: 'material',
+                property: 'color'
+              } 
+            ]
+          });
+        }
+        
+         if (!NAF.schemas.hasTemplate("#sphere-template")) {
+          NAF.schemas.add({
+            template: '#sphere-template',
+            components: [
+              "position",
+              {
+                component: 'material',
+                property: 'color'
+              }, {
+                component: 'text',
+                property: 'value'
+              }, {
+                component: 'visible'
+              }
+            ]
+          });
+        }
+        
+           if (!NAF.schemas.hasTemplate("#alert-template")) {
+          NAF.schemas.add({
+            template: '#alert-template',
+            components: [
+              "position",
+              {
+                component: 'material',
+                property: 'color'
+              },  {
+                component: 'material',
+                property: 'visible'
+              }
+              ,{
+                component: 'text',
+                property: 'value'
+              }
+            ]
+          });
+        }
+        
+                   if (!NAF.schemas.hasTemplate("#state-template")) {
+          NAF.schemas.add({
+            template: '#state-template',
+            components: [
+              "position"
+              ,{
+                component: 'text',
+                property: 'value'
+              }
+            ]
+          });
+        }
+        const components = NAF.schemas.getComponentsOriginal(template);
+        return components;
+      }
+    </script>
+
+
+
+  </head>
+  <body>
+	  
+    <a-scene networked-scene="
+      room: myroom;
+      debug: true;
+      adapter: wseasyrtc;"
+      
+      cursor="rayOrigin: mouse" raycaster="objects: .clickable"
+  
+      >
+      	<a-assets>
+			
+			  <img id="grid" src="https://img.gs/bbdkhfbzkk/stretch/https://i.imgur.com/25P1geh.png" crossorigin="anonymous">
+        <img id="sky" src="https://i.imgur.com/WqlqEkq.jpg" crossorigin="anonymous" />
+        
+			<!--<a-asset-item id="iconfontsolid" src="assets/fonts/fa-solid-900.ttf"></a-asset-item>-->
+			<!--<a-asset-item id="textfont" src="assets/fonts/PermanentMarker-Regular.ttf"></a-asset-item>-->
+			 <template id="avatar-template">
+    
+    <a-entity class="avatar">
+      <a-sphere class="head"
+        color="#5985ff"
+        scale="0.45 0.5 0.4"
+      ></a-sphere>
+      <a-entity class="face"
+        position="0 0.05 0"
+      >
+        <a-sphere class="eye"
+          color="#efefef"
+          position="0.16 0.1 -0.35"
+          scale="0.12 0.12 0.12"
+        >
+          <a-sphere class="pupil"
+            color="#000"
+            position="0 0 -1"
+            scale="0.2 0.2 0.2"
+          ></a-sphere>
+        </a-sphere>
+        <a-sphere class="eye"
+          color="#efefef"
+          position="-0.16 0.1 -0.35"
+          scale="0.12 0.12 0.12"
+        >
+          <a-sphere class="pupil"
+            color="#000"
+            position="0 0 -1"
+            scale="0.2 0.2 0.2"
+          ></a-sphere>
+        </a-sphere>
+      </a-entity>
+    </a-entity>
+  </template>
+   <!-- Templates -->
+        
+        <template id="sphere-template">
+          <a-plane class="raycastable"  color-changer ></a-entity>
+        </template>
+        <template id ="alert-template">
+        <a-entity position="0 1.5 0"  ></a-entity>
+        </template>
+        
+            <!-- Hands -->
+        <template id="left-hand-template">
+          <a-entity>
+          </a-entity>
+        </template>
+
+   <template id="right-hand-template">
+          <a-entity laser-controls>
+          </a-entity>
+        </template> 
+                    
+       <a-asset-item id="left-hand-model" src="/assets/leftHandHigh.glb"></a-asset-item>
+         <a-asset-item id="right-hand-model" src="/assets/rightHandHigh.glb"></a-asset-item>
+         
+           -->
+        <!-- Camera Rig / Player -->
+        <template id="camera-rig-template">
+          <a-entity></a-entity>
+        </template>
+
+        <!-- Head / Avatar -->
+        <!--      a few spheres make a head + eyes + pupils    -->
+        <template id="head-template">
+     <a-entity class="avatar" player-info>
+            <a-entity class="face" position="0 0.05 0" >
+            </a-entity>
+          </a-entity>
+        </template>
+
+  <template id="ball-template">
+
+          <a-entity geometry="primitive: sphere; radius: 0.15" material="color: red" ></a-entity>
+
+  </template>
+  
+  
+  
+  <template id="ball-template2">
+
+          <a-entity geometry="primitive: sphere; radius: 0.15" material="color: green" ></a-entity>
+
+  </template>
+  
+    <template id="ball-location">
+
+          <a-entity geometry="primitive: sphere; radius: 0.15" material="color: blue;opacity: 0.2;" ></a-entity>
+
+  </template>
+  
+    <template id="state-template">
+
+          <a-entity ></a-entity>
+
+  </template>
+			
+		</a-assets>
+		
+ 
+<a-entity id="start1" networked="template:#ball-location;networkId:ballloc1;persistent:true;owner:scene" position="0 1 1.5"></a-entity>
+
+        
+        <a-entity id="model" visible="true" game2 >
+			
+			<a-plane id = "A"  visible="true"  text="value: Hello World;align:center;wrapCount:10;" width="1" height="0.5" color="green" position="0 3.5 0" material="opacity: 0.3; transparent: true" networked="template:#sphere-template;networkId:A;persistent:true;owner:scene"></a-plane>
+			<a-plane id = "B" visible="true"  text="value: Hello World;align:center;wrapCount:10;" width="1" height="0.5" color="green" position="0 3.5 0" rotation="0 180 0" material="opacity: 0.3; transparent: true" networked="template:#sphere-template;networkId:B;persistent:true;owner:scene"></a-plane>
+
+          <a-plane id = "A1" visible="true"  text="value: Hello World;align:center;wrapCount:10;" width="1" height="0.5" color="red" position="-1.5 0.5 0" material="opacity: 0.3; transparent: true" networked="template:#sphere-template;networkId:A1;persistent:true;owner:scene" changestate>
+     
+          </a-plane>
+   
+          <a-plane id = "A2"  visible="true" text="value: Hello World;align:center;wrapCount:10;" width="1" height="0.5" color="red" position="0 0.5 0" material="opacity: 0.3; transparent: true" networked="template:#sphere-template;networkId:A2;persistent:true;owner:scene" changestate></a-plane>
+          <a-plane id = "A3" visible="true"  text="value: Hello World;align:center;wrapCount:10;" width="1" height="0.5" color="red" position="1.5 0.5 0" material="opacity: 0.3; transparent: true" networked="template:#sphere-template;networkId:A3;persistent:true;owner:scene" changestate ></a-plane>
+          <a-plane id = "B1" visible="true"  text="value: Hello World;align:center;wrapCount:10;" width="1" height="0.5" color="red" position="-1.5 0.5 0" rotation="0 180 0" material="opacity: 0.3; transparent: true" networked="template:#sphere-template;networkId:B1;persistent:true;owner:scene" changestate></a-plane>
+          <a-plane id = "B2" visible="true"  text="value: Hello World;align:center;wrapCount:10;" width="1" height="0.5" color="red" position="0 0.5 0" rotation="0 180 0" material="opacity: 0.3; transparent: true" networked="template:#sphere-template;networkId:B2;persistent:true;owner:scene" changestate></a-plane>
+          <a-plane id = "B3" visible="true"  text="value: Hello World;align:center;wrapCount:10;"  width="1" height="0.5" color="red" position="1.5 0.5 0" rotation="0 180 0" material="opacity: 0.3; transparent: true" networked="template:#sphere-template;networkId:B3;persistent:true;owner:scene" changestate></a-plane>
+          
+          
+        </a-entity>
+        
+        <a-entity id="alert" text="align:center;wrapCount:10;" networked="template:#alert-template;networkId:alert;persistent:true;owner:scene" restart></a-entity>
+        <a-entity id="alert2" text="align:center;wrapCount:10;" rotation="0 180 0" networked="template:#alert-template;networkId:alert2;persistent:true;owner:scene" restart></a-entity>
+         <a-entity id="score" text="align:center;wrapCount:10;value:0" rotation="0 180 0" networked="template:#alert-template;networkId:alert3;persistent:true;owner:scene" visible="false" ></a-entity>
+     <a-entity id="states" text="value:P1D2" networked="template:#state-template;networkId:state;persistent:true;owner:scene" visible="false" ></a-entity>
+
+
+   <a-entity id="camera-rig"
+                tracked-vr-hands wasd-controls
+                movement-controls="fly:true;"
+                positioner
+                networked="template:#camera-rig-template;"
+      >
+        <a-entity id="local-avatar" camera position="0 1.6 0" look-controls 
+                  networked="template:#head-template;" visible="false">
+        </a-entity>
+  
+ 
+ </a-entity>
+      <a-entity position="0 0 0"
+        geometry="primitive: plane; width: 10000; height: 10000;" rotation="-90 0 0"
+        material="src: #grid; repeat: 10000 10000; transparent: true; metalness:0.6; roughness: 0.4; sphericalEnvMap: #sky;"></a-entity>
+      <a-entity light="color: #ccccff; intensity: 1; type: ambient;" visible=""></a-entity>
+      <a-entity light="color: #ffaaff; intensity: 1.5" position="5 5 5"></a-entity>
+      <a-sky src="#sky" rotation="0 -90 0"></a-sky>
+      <a-entity id="particles" particle-system="preset: snow"></a-entity>
+</a-entity>
+
+
+
+
+<script>
+/* global AFRAME, NAF */
+AFRAME.registerComponent('color-changer', {
+init: function(){
+	this.player = document.querySelector('#camera-rig')
+	this.state = document.querySelector('#states')
+	this.optionId = ""
+	},
+
+  events: {
+    'click':  function (evt) {
+	if(document.querySelector('#P1')){
+				this.el1 = document.querySelector('#A1')
+		this.el2 = document.querySelector('#A2')
+		this.el3 = document.querySelector('#A3')
+
+		} else {
+					this.el1 = document.querySelector('#B1')
+		this.el2 = document.querySelector('#B2')
+		this.el3 = document.querySelector('#B3')
+			}
+ if(this.el1.getAttribute('visible') && this.el2.getAttribute('visible') && this.el3.getAttribute('visible')){
+	  if(this.el1.getAttribute('material').color === "red" && this.el2.getAttribute('material').color === "red" && this.el3.getAttribute('material').color === "red"){
+		       this.el.setAttribute('material', {color:"black"});
+		        NAF.utils.takeOwnership( this.el);
+
+
+	  }}
+    }
+    }
+
+	}
+
+
+
+);</script>
+
+<script>
+	AFRAME.registerComponent('changestate', {
+		init:function(){
+			this.counter =0
+			this.results = "non"
+			}
+		,
+		tick:function(){
+	var player = document.querySelector('#P3')
+	if(player){ 
+		
+  	if(this.el.getAttribute('material').color === "black"){
+		this.counter += 1
+if(this.results === "non"){
+		var state = document.querySelector('#states')
+		var concept = document.querySelector('#A')
+		
+		
+		if(concept.getAttribute('text').value === this.el.getAttribute('text').value){
+			this.results = "correct"
+			} else {
+				this.results = "incorrect"
+				}
+		
+		var state_value =  state.getAttribute("text").value
+		var state_value_new = state_value+'_'+this.results
+		console.log(state_value_new)
+		state.setAttribute('text',{value:state_value_new})
+		console.log(state.getAttribute('text'))
+	
+				//await delay(5000)
+				//this.el.setAttribute('color', "red");
+				//NAF.utils.takeOwnership(this.el);
+				NAF.utils.takeOwnership(state)
+			
+		}
+		if(this.counter === 150) {
+			 var state = document.querySelector('#states')
+			 var currentstate = document.querySelector('#states').getAttribute('text').value
+			 
+			 if(currentstate === "P1D2_correct"|| currentstate === "P1D2_incorrect"){
+				 state.setAttribute('text',{value:"P2D1"})
+				 } else if(currentstate === "P2D1_correct"|| currentstate === "P2D1_incorrect"){
+					 state.setAttribute('text',{value:"P1D2"})
+					 }
+					 this.counter = 0
+					 this.results = "non"
+					 this.el.setAttribute("material",{color:"red"})
+					 NAF.utils.takeOwnership(state)
+					 NAF.utils.takeOwnership(this.el)
+			}
+		
+		}
+	}}});
+
+</script>
+
+<script>
+AFRAME.registerComponent('game2', {
+	
+
+init: function() {
+	this.score = 0
+	this.start = true;
+	this.randomise = false;
+
+	this.positionsX = []
+	this.positionsY = []
+	this.positionsZ = []
+	
+	this.name = []
+	this.roles = []
+	this.limit= 0 
+
+
+}
+
+,
+
+	 sendJSON:function(name,roles,positionX, positionsY, positionsZ ) {
+    var data = {
+        name: name,
+        roles:roles,
+        x: positionX,
+        y:positionsY,
+        z:positionsZ
+    };
+
+    var json = JSON.stringify(data);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "https://log.weak-monkey-2.telebit.io/resource");
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
+    console.log(json)
+    xhr.send(json);
+}
+,
+
+
+	
+
+tick:  function() {
+	
+	
+	var check = document.querySelector('#start1')
+	var state = document.querySelector('#states')
+	var player1 = document.querySelector('#P1')
+	var player2 = document.querySelector('#P2')
+
+
+	alert = document.querySelector('#alert')
+	alert2 = document.querySelector('#alert2') 
+	this.limit+=1
+	
+  
+
+	
+
+	if(hand  &&  this.limit > 60){
+		this.positionsX.push(hand.getAttribute("position").x)
+		this.positionsY.push(hand.getAttribute("position").y)
+		this.positionsZ.push(hand.getAttribute("position").z)
+		if(player1){
+				this.name.push("player1")
+			} else if (player2) {
+				this.name.push("player1")
+				}
+	
+		this.roles.push("hello")
+
+		this.limit = 0
+		}
+	
+//	if(state.getAttribute("text").value === "P1D2"|| state.getAttribute("text").value  === "P2D1") {
+	//	this.start = true
+		//} else {
+			//this.start = false
+			//}
+ if(state.getAttribute("text").value === "P1D2"|| state.getAttribute("text").value === "P2D1"){
+	if(this.start !==false ){
+		if(hand && this.limit){
+			this.sendJSON(this.name, this.roles,this.positionsX, this.positionsY, this.positionsZ)
+			this.name = []
+			this.positionsX = []
+			 this.positionsY = []
+			this.positionsZ = []
+			}
+		 this.start = false
+		
+		var A = document.querySelector('#A');
+        var B = document.querySelector('#B');
+
+	  const objects = ["Car", "House", "Beach", "Peace", "Love", "Thunder","Music","War","Joke","Magic"];
+      var object = objects[Math.floor(Math.random()*objects.length)];
+      var options = [object]
+     var x = 1
+			
+			      A.setAttribute('text', {value:object})
+			      B.setAttribute('text', {value:object})
+			      var visible1 = A.getAttribute("visible")
+			      if(state.getAttribute("text").value === "P1D2"){
+					  A.setAttribute("visible",false)
+					  B.setAttribute("visible",true)	  
+					  } 
+			      else if (state.getAttribute("text").value === "P2D1"){
+					  A.setAttribute("visible",true)
+					  B.setAttribute("visible",false)
+						  }
+			      NAF.utils.takeOwnership(A);
+			      NAF.utils.takeOwnership(B);
+
+
+   while (options.length < 3) {
+      new_object = objects[Math.floor(Math.random()*objects.length)];
+      if(!options.includes(new_object)){
+		  options.push(new_object)}
+	  }
+
+let shuffled_options = options
+  .map(value => ({ value, sort: Math.random() }))
+  .sort((a, b) => a.sort - b.sort)
+  .map(({ value }) => value)
+      
+   option = "A"
+   optionB = "B"
+   option_id = ""
+    option_idB = ""
+   //let i = 0;
+    for (let i = 0; i < 3; i++) { 
+      option_id = option+""+(i+1)
+      option_idB = optionB+""+(i+1)
+
+      var el1 = document.getElementById(option_id);
+      var el2 = document.getElementById(option_idB);
+      el1.setAttribute('text', {value:shuffled_options[i]});
+      el2.setAttribute('text', {value:shuffled_options[i]});
+       if(state.getAttribute('text').value === "P1D2"){
+		   el1.setAttribute('visible', true);
+		   el2.setAttribute('visible', false);
+		   } else if (state.getAttribute("text").value === "P2D1"){
+		   el1.setAttribute('visible',false);
+		   el2.setAttribute('visible', true);
+			   }
+      
+      NAF.utils.takeOwnership(el1)
+      NAF.utils.takeOwnership(el2)
+}
+
+}	} else {this.start = true}
+}
+});
+
+</script>
+<script>
+AFRAME.registerComponent('restart', {
+	
+	tick:function(){
+		var state = document.querySelector('#states');
+		var alert = document.querySelector('#alert')
+		var alert2 = document.querySelector('#alert2') 
+		
+
+		if(state.getAttribute("text").value === "P1D2_correct"||state.getAttribute("text").value === "P2D1_correct"){
+		alert.setAttribute("text",{value:"Correct"}) 
+		alert2.setAttribute("text",{value:"Correct"}) 
+		} else if(state.getAttribute("text").value === "P1D2_incorrect"||state.getAttribute("text").value === "P2D1_incorrect") {
+			alert.setAttribute("text",{value:"Incorrect"}) 
+			alert2.setAttribute("text",{value:"Incorrect"}) 
+			} else{
+				alert.setAttribute("text",{value:""}) 
+			alert2.setAttribute("text",{value:""}) 
+				}
+				NAF.utils.takeOwnership(alert)
+				NAF.utils.takeOwnership(alert2)
+			}
+	
+	});
+
+</script>
+
+<script>
+     // always register components before your scene
+      AFRAME.registerComponent('tracked-vr-hands', {
+        onEnterVR() {
+          if (AFRAME.utils.device.isMobile()) return; // exclude e.g. cardboard, which lacks tracked controllers
+          if (document.getElementById('my-tracked-right-hand')) return; // don't add them in more than once!
+          // add these with JS:
+          // <a-entity hand-controls="hand:left" networked="template:#left-hand-template;attachTemplateToLocal:true;"></a-entity>
+          // <a-entity hand-controls="hand:right" networked="template:#right-hand-template;attachTemplateToLocal:true;"></a-entity>
+          ['left', 'right'].forEach(side => {
+            const el = document.createElement('a-entity')
+         
+            if(side === 'right') {
+				el.setAttribute('laser-controls', {hand: side});
+				} 
+				else {el.setAttribute('hand-controls', {hand: side});
+					
+					}
+
+		
+ 
+            el.setAttribute('id', `my-tracked-${side}-hand`);
+            
+       
+            // note that the ID will be applied to THIS client's hands,
+            // but not other connected clients,
+            // and not on the machine of other connected clients
+            this.el.appendChild(el);
+          })
+        },
+        init() {
+          this.el.sceneEl.addEventListener('enter-vr', this.onEnterVR.bind(this));
+          // future improvements:
+          // pick up hand-controls events
+          // https://github.com/aframevr/aframe/blob/b164623dfa0d2548158f4b7da06157497cd4ea29/docs/components/hand-controls.md
+          // and broadcast the matching gestures to other connected clients
+          // possibly trigger the animation on the model itself using animation-mixer:
+          // https://github.com/n5ro/aframe-extras/tree/master/src/loaders
+          // could add as 'networked-hands' component within repo
+        }
+      })
+      
+      
+
+</script>
+
+    <script>
+      // On mobile remove elements that are resource heavy
+      var isMobile = AFRAME.utils.device.isMobile();
+
+      if (isMobile) {
+        var particles = document.getElementById('particles');
+        particles.parentNode.removeChild(particles);
+      }
+    </script>
+    
+    <script>
+    AFRAME.registerComponent('track', {
+  init: function () {
+
+     //this.trackedEl = document.querySelector('#camera-rig');
+     this.trackedEl = document.querySelector('#my-tracked-left-hand');
+  },
+  
+  tick: function () {
+	   this.trackedEl.getAttribute("position");
+	   var el = document.getElementById("ball");
+	   if(this.trackedEl){
+	   var x = this.trackedEl.getAttribute("position").x;
+	    var y = this.trackedEl.getAttribute("position").y;
+	     var z = this.trackedEl.getAttribute("position").z;
+	  el.setAttribute('position',  {x:this.trackedEl.object3D.getAttribute("position").x, y:this.trackedEl.object3D.getAttribute("position").y+1, z:this.trackedEl.object3D.getAttribute("position").z+1})
+}
+  }
+	  
+       
+});
+
+    </script>
+
+    <script>
+
+
+      // Called by Networked-Aframe when connected to server
+      function onConnect () {
+        console.log("onConnect", new Date());
+      }
+    </script>
+  </body>
+</html>
