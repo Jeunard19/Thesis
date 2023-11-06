@@ -148,8 +148,6 @@
         <img id="sky" src="https://i.imgur.com/WqlqEkq.jpg" crossorigin="anonymous" />
         
         
-			<!--<a-asset-item id="iconfontsolid" src="assets/fonts/fa-solid-900.ttf"></a-asset-item>-->
-			<!--<a-asset-item id="textfont" src="assets/fonts/PermanentMarker-Regular.ttf"></a-asset-item>-->
 			 <template id="avatar-template">
     
     <a-entity class="avatar">
@@ -217,9 +215,6 @@
         <template id="camera-rig-template">
           <a-entity></a-entity>
         </template>
-
-        <!-- Head / Avatar -->
-        <!--      a few spheres make a head + eyes + pupils    -->
         <template id="head-template">
      <a-entity class="avatar" player-info>
             <a-entity class="face" position="0 1.5 0" >
@@ -744,14 +739,10 @@ AFRAME.registerComponent('restart', {
 </script>
 
 <script>
-     // always register components before your scene
       AFRAME.registerComponent('tracked-vr-hands', {
         onEnterVR() {
-          if (AFRAME.utils.device.isMobile()) return; // exclude e.g. cardboard, which lacks tracked controllers
-          if (document.getElementById('my-tracked-right-hand')) return; // don't add them in more than once!
-          // add these with JS:
-          // <a-entity hand-controls="hand:left" networked="template:#left-hand-template;attachTemplateToLocal:true;"></a-entity>
-          // <a-entity hand-controls="hand:right" networked="template:#right-hand-template;attachTemplateToLocal:true;"></a-entity>
+          if (AFRAME.utils.device.isMobile()) return; 
+          if (document.getElementById('my-tracked-right-hand')) return; 
           ['left', 'right'].forEach(side => {
             const el = document.createElement('a-entity')
          
@@ -765,23 +756,12 @@ AFRAME.registerComponent('restart', {
 		
  
             el.setAttribute('id', `my-tracked-${side}-hand`);
-            
-       
-            // note that the ID will be applied to THIS client's hands,
-            // but not other connected clients,
-            // and not on the machine of other connected clients
             this.el.appendChild(el);
           })
         },
         init() {
           this.el.sceneEl.addEventListener('enter-vr', this.onEnterVR.bind(this));
-          // future improvements:
-          // pick up hand-controls events
-          // https://github.com/aframevr/aframe/blob/b164623dfa0d2548158f4b7da06157497cd4ea29/docs/components/hand-controls.md
-          // and broadcast the matching gestures to other connected clients
-          // possibly trigger the animation on the model itself using animation-mixer:
-          // https://github.com/n5ro/aframe-extras/tree/master/src/loaders
-          // could add as 'networked-hands' component within repo
+
         }
       })
       
